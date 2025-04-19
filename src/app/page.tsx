@@ -1,21 +1,27 @@
 "use client";
 
 import { Hero } from "@/components/landing-page/hero";
-import { UserButton, useUser } from "@clerk/clerk-react";
-import { Authenticated, Unauthenticated } from "convex/react";
+import { useUser } from "@clerk/clerk-react";
+import { Unauthenticated, useConvexAuth } from "convex/react";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 
 export default function Home() {
+  const { isAuthenticated } = useConvexAuth();
   const { user } = useUser();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (user && isAuthenticated) {
+      router.push("/workouts");
+    }
+  }, [user, router]);
 
   return (
-    <main>
+    <main className="overflow-hidden">
       <Unauthenticated>
         <Hero />
       </Unauthenticated>
-      <Authenticated>
-        <UserButton />
-        <div>Logged in as {user?.fullName}</div>
-      </Authenticated>
     </main>
   );
 }
