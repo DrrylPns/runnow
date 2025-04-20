@@ -12,7 +12,7 @@ export default function Home() {
   const router = useRouter();
 
   useEffect(() => {
-    if (user && isAuthenticated) {
+    if (user) {
       router.push("/workouts");
     }
   }, [user, router]);

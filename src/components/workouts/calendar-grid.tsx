@@ -23,11 +23,12 @@ export const CalendarGrid = ({ days, onSelectDay }: CalendarGridProps) => {
 
       {/* Actual calendar days */}
       <div className="grid grid-cols-7">
-        {days.map((day) => (
+        {days.map((day, index) => (
           <CalendarCell
             key={day.date.toISOString()}
             day={day}
             onClick={onSelectDay}
+            index={index}
           />
         ))}
       </div>

@@ -1,4 +1,5 @@
 import { Header } from "@/components/header";
+import { Toaster } from "@/components/ui/sonner";
 import { CalendarView } from "@/components/workouts/calendar-view";
 import { dummyWorkouts } from "@/lib/data";
 import React from "react";
