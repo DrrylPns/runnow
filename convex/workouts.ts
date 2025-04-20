@@ -27,6 +27,24 @@ export const create = mutation({
     }
 })
 
+export const get = query({
+    args: {},
+    handler: async (ctx) => {
+        const identity = await ctx.auth.getUserIdentity()
+        if (!identity) {
+            throw new Error("Not authenticated")
+        }
+
+        const userId = identity.subject
+
+        return await ctx.db
+            .query("workouts")
+            .withIndex("by_user", q => q.eq("userId", userId))
+            .order("desc")
+            .collect()
+    }
+})
+
 // export const create = mutation({
 //     args: {
 //         date: v.number(),

@@ -5,7 +5,7 @@ import {
   getTotalCalories,
   getTotalDuration,
 } from "@/lib/calendar";
-import { CalendarDay } from "@/lib/types";
+import { CalendarDay, WorkoutType } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
 import { WorkoutFormDialog } from "./workout-form";
@@ -61,7 +61,7 @@ export const CalendarCell = ({ day, onClick, index }: CalendarCellProps) => {
                 {uniqueWorkoutTypes.slice(0, 4).map((type, index) => (
                   <WorkoutTypeIcon
                     key={`${date.toISOString()}-${type}-${index}`}
-                    type={type}
+                    type={type as WorkoutType}
                     size={20}
                   />
                 ))}
@@ -93,7 +93,7 @@ export const CalendarCell = ({ day, onClick, index }: CalendarCellProps) => {
         isOpen={isOpen}
         setIsOpen={setIsOpen}
         isToday={isToday}
-        uniqueWorkoutTypes={uniqueWorkoutTypes}
+        uniqueWorkoutTypes={uniqueWorkoutTypes as WorkoutType[]}
         key={index}
       />
     </>

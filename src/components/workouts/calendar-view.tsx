@@ -1,14 +1,14 @@
 "use client";
 
 import { getCalendarMonth } from "@/lib/calendar";
-import { Workout } from "@/lib/types";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { CalendarHeader } from "./calendar-header";
 import { CalendarGrid } from "./calendar-grid";
+import { Doc } from "../../../convex/_generated/dataModel";
 
 interface CalendarViewProps {
-  workouts: Workout[];
+  workouts: Doc<"workouts">[];
 }
 
 export function CalendarView({ workouts }: CalendarViewProps) {

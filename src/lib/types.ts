@@ -1,3 +1,5 @@
+import { Doc } from "../../convex/_generated/dataModel";
+
 export type WorkoutType =
     | 'Treadmill'
     | 'Upper'
@@ -24,7 +26,7 @@ export interface CalendarDay {
     date: Date;
     isCurrentMonth: boolean;
     isToday: boolean;
-    workouts: Workout[];
+    workouts: Doc<"workouts">[];
 }
 
 export interface CalendarMonth {

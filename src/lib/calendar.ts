@@ -1,6 +1,7 @@
+import { Doc } from "../../convex/_generated/dataModel";
 import { CalendarDay, CalendarMonth, Workout } from "./types";
 
-export function getCalendarMonth(year: number, month: number, workouts: Workout[]): CalendarMonth {
+export function getCalendarMonth(year: number, month: number, workouts: Doc<"workouts">[]): CalendarMonth {
     const firstDayOfMonth = new Date(year, month, 1);
     const lastDayOfMonth = new Date(year, month + 1, 0);
     const daysInMonth = lastDayOfMonth.getDate();
@@ -67,9 +68,12 @@ export function getCalendarMonth(year: number, month: number, workouts: Workout[
     };
 }
 
-function filterWorkoutsByDate(workouts: Workout[], date: Date): Workout[] {
+function filterWorkoutsByDate(workouts: Doc<"workouts">[] | undefined, date: Date): Doc<"workouts">[] {
+    if (!workouts) return [];
+
     return workouts.filter(workout => {
-        const workoutDate = new Date(workout.date);
+        // Convert Unix timestamp to milliseconds and create Date object
+        const workoutDate = new Date(workout.date * 1000);
         return (
             workoutDate.getDate() === date.getDate() &&
             workoutDate.getMonth() === date.getMonth() &&
@@ -99,19 +103,19 @@ export function formatMinutesToHoursAndMinutes(minutes: number): string {
     }
 }
 
-export function getTotalCalories(workouts: Workout[]): number {
-    return workouts.reduce((total, workout) => total + workout.caloriesBurned, 0);
+export function getTotalCalories(workouts: Doc<"workouts">[]): number {
+    return workouts.reduce((total, workout) => total + (workout.caloriesBurned || 0), 0);
 }
 
-export function getTotalDuration(workouts: Workout[]): number {
-    return workouts.reduce((total, workout) => total + workout.durationMinutes, 0);
+export function getTotalDuration(workouts: Doc<"workouts">[]): number {
+    return workouts.reduce((total, workout) => total + (workout.durationMinutes || 0), 0);
 }
 
-export function getTotalSteps(workouts: Workout[]): number {
+export function getTotalSteps(workouts: Doc<"workouts">[]): number {
     return workouts.reduce((total, workout) => total + (workout.steps || 0), 0);
 }
 
-export function getTotalDistance(workouts: Workout[]): number {
+export function getTotalDistance(workouts: Doc<"workouts">[]): number {
     return workouts.reduce(
         (total, workout) => total + (workout.distanceKm || 0),
         0
