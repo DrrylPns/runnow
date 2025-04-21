@@ -1,15 +1,15 @@
 import { Doc } from "../../convex/_generated/dataModel";
 
 export type WorkoutType =
-    | 'Treadmill'
-    | 'Upper'
     | 'Dumbbell'
-    | 'Lower'
-    | 'Core'
+    | 'Barbell'
+    | 'Treadmill-Running'
+    | 'Treadmill-Walking'
     | 'Yoga'
+    | 'Running'
+    | 'Walking'
     | 'Swimming'
-    | 'Cycling'
-    | 'Other';
+    | string; // Allow custom workout types
 
 export interface Workout {
     id: string;

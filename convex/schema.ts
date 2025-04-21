@@ -15,4 +15,12 @@ export default defineSchema({
         .index("by_user", ["userId"])
         .index("by_user_date", ["userId", "date"])
         .index("by_date", ["date"]),
+
+    customWorkoutTypes: defineTable({
+        userId: v.string(), // Clerk user ID
+        name: v.string(), // Name of the custom workout type
+        icon: v.string(), // Icon name for the custom workout type
+    })
+        .index("by_user", ["userId"])
+        .index("by_user_name", ["userId", "name"]),
 });

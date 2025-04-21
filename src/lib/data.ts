@@ -1,16 +1,15 @@
 import { Workout, WorkoutType } from './types';
 
 // Predefined workout types
-export const workoutTypes: WorkoutType[] = [
-    'Treadmill',
-    'Upper',
+export const defaultWorkoutTypes: WorkoutType[] = [
     'Dumbbell',
-    'Lower',
-    'Core',
+    'Barbell',
+    'Treadmill-Running',
+    'Treadmill-Walking',
     'Yoga',
+    'Running',
+    'Walking',
     'Swimming',
-    'Cycling',
-    'Other'
 ];
 
 // Generate some dummy workout data for the next 60 days
@@ -41,7 +40,7 @@ function generateDummyWorkouts(): Workout[] {
             for (let k = 0; k < numTypes; k++) {
                 let type: WorkoutType;
                 do {
-                    type = workoutTypes[Math.floor(Math.random() * workoutTypes.length)];
+                    type = defaultWorkoutTypes[Math.floor(Math.random() * defaultWorkoutTypes.length)];
                 } while (selectedTypes.includes(type));
 
                 selectedTypes.push(type);

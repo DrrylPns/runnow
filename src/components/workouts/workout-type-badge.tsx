@@ -11,14 +11,14 @@ interface WorkoutTypeBadgeProps {
   }
 
 const colorMap: Record<WorkoutType, {bg: string, text: string}> = {
-    Treadmill: { bg: "bg-red-100 dark:bg-red-900/20", text: "text-red-800 dark:text-red-300" },
-    Upper: { bg: "bg-blue-100 dark:bg-blue-900/20", text: "text-blue-800 dark:text-blue-300" },
-    Dumbbell: { bg: "bg-purple-100 dark:bg-purple-900/20", text: "text-purple-800 dark:text-purple-300" },
-    Lower: { bg: "bg-orange-100 dark:bg-orange-900/20", text: "text-orange-800 dark:text-orange-300" },
-    Core: { bg: "bg-yellow-100 dark:bg-yellow-900/20", text: "text-yellow-800 dark:text-yellow-300" },
+    "Treadmill-Running": { bg: "bg-red-100 dark:bg-red-900/20", text: "text-red-800 dark:text-red-300" },
+    "Treadmill-Walking": { bg: "bg-blue-100 dark:bg-blue-900/20", text: "text-blue-800 dark:text-blue-300" },
+    Barbell: { bg: "bg-purple-100 dark:bg-purple-900/20", text: "text-purple-800 dark:text-purple-300" },
+    Dumbbell: { bg: "bg-orange-100 dark:bg-orange-900/20", text: "text-orange-800 dark:text-orange-300" },
+    Running: { bg: "bg-yellow-100 dark:bg-yellow-900/20", text: "text-yellow-800 dark:text-yellow-300" },
     Yoga: { bg: "bg-green-100 dark:bg-green-900/20", text: "text-green-800 dark:text-green-300" },
     Swimming: { bg: "bg-cyan-100 dark:bg-cyan-900/20", text: "text-cyan-800 dark:text-cyan-300" },
-    Cycling: { bg: "bg-emerald-100 dark:bg-emerald-900/20", text: "text-emerald-800 dark:text-emerald-300" },
+    Walking: { bg: "bg-emerald-100 dark:bg-emerald-900/20", text: "text-emerald-800 dark:text-emerald-300" },
     Other: { bg: "bg-gray-100 dark:bg-gray-900/20", text: "text-gray-800 dark:text-gray-300" },
 }
 

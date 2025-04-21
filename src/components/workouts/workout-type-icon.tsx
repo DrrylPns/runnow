@@ -2,18 +2,15 @@
 
 import React from "react";
 import { WorkoutType } from "@/lib/types";
-import {
-  Dumbbell,
-  FileWarning as Running,
-  Accessibility,
-  ArrowUpDown,
-  Layers,
-  Cog as Yoga,
-  Bike,
-  Minimize as Swimming,
-  Ellipsis,
-} from "lucide-react";
+import { TbTreadmill, TbSwimming } from "react-icons/tb";
+import { IoBarbellOutline } from "react-icons/io5";
+import { LuDumbbell } from "react-icons/lu";
+import { LiaRunningSolid, LiaWalkingSolid } from "react-icons/lia";
+import { GrYoga } from "react-icons/gr";
 import { cn } from "@/lib/utils";
+import { Ellipsis } from "lucide-react";
+import { useQuery } from "convex/react";
+import { api } from "../../../convex/_generated/api";
 
 interface WorkoutTypeIconProps {
   type: WorkoutType;
@@ -22,15 +19,14 @@ interface WorkoutTypeIconProps {
 }
 
 const colorMap: Record<WorkoutType, string> = {
-  Treadmill: "text-red-500",
-  Upper: "text-blue-500",
-  Dumbbell: "text-purple-500",
-  Lower: "text-orange-500",
-  Core: "text-yellow-500",
+  "Treadmill-Running": "text-red-500",
+  "Treadmill-Walking": "text-blue-500",
+  Barbell: "text-purple-500",
+  Dumbbell: "text-orange-500",
+  Running: "text-yellow-500",
   Yoga: "text-green-500",
   Swimming: "text-cyan-500",
-  Cycling: "text-emerald-500",
-  Other: "text-gray-500",
+  Walking: "text-emerald-500",
 };
 
 export const WorkoutTypeIcon: React.FC<WorkoutTypeIconProps> = ({
@@ -38,29 +34,41 @@ export const WorkoutTypeIcon: React.FC<WorkoutTypeIconProps> = ({
   className,
   size = 20,
 }) => {
+  const customTypes = useQuery(api.customWorkoutTypes.getByUser);
+  const customType = customTypes?.find(t => t.name === type);
+
   const iconColor = colorMap[type] || "text-gray-500";
 
   const getIcon = () => {
+    if (customType) {
+      // Try to dynamically import the icon from lucide-react
+      try {
+        const Icon = require(`lucide-react`)[customType.icon];
+        return Icon ? <Icon size={size} className={cn(iconColor, className)} /> : <Ellipsis size={size} className={cn(iconColor, className)} />;
+      } catch {
+        return <Ellipsis size={size} className={cn(iconColor, className)} />;
+      }
+    }
+
     switch (type) {
-      case "Treadmill":
-        return <Running size={size} className={cn(iconColor, className)} />;
-      case "Upper":
+      case "Treadmill-Running":
+        return <TbTreadmill size={size} className={cn(iconColor, className)} />;
+      case "Barbell":
         return (
-          <Accessibility size={size} className={cn(iconColor, className)} />
+          <IoBarbellOutline size={size} className={cn(iconColor, className)} />
         );
       case "Dumbbell":
-        return <Dumbbell size={size} className={cn(iconColor, className)} />;
-      case "Lower":
-        return <ArrowUpDown size={size} className={cn(iconColor, className)} />;
-      case "Core":
-        return <Layers size={size} className={cn(iconColor, className)} />;
+        return <LuDumbbell size={size} className={cn(iconColor, className)} />;
+      case "Running":
+        return <LiaRunningSolid size={size} className={cn(iconColor, className)} />;
+      case "Treadmill-Walking":
+        return <TbTreadmill size={size} className={cn(iconColor, className)} />;
       case "Yoga":
-        return <Yoga size={size} className={cn(iconColor, className)} />;
+        return <GrYoga size={size} className={cn(iconColor, className)} />;
       case "Swimming":
-        return <Swimming size={size} className={cn(iconColor, className)} />;
-      case "Cycling":
-        return <Bike size={size} className={cn(iconColor, className)} />;
-      case "Other":
+        return <TbSwimming size={size} className={cn(iconColor, className)} />;
+      case "Walking":
+        return <LiaWalkingSolid size={size} className={cn(iconColor, className)} />;
       default:
         return <Ellipsis size={size} className={cn(iconColor, className)} />;
     }
