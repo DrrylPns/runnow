@@ -14,7 +14,6 @@ const WorkoutsPage = () => {
   if (workouts === undefined) {
     return (
       <div className="flex min-h-screen flex-col overflow-hidden">
-        <Header />
         <main className="flex-1 p-8">
           <Skeleton className="h-[600px] w-full" />
         </main>
@@ -26,7 +25,6 @@ const WorkoutsPage = () => {
 
   return (
     <div className="flex min-h-screen flex-col overflow-hidden">
-      <Header />
       <main className="flex-1">
         <CalendarView workouts={workouts} />
       </main>

@@ -6,7 +6,7 @@ export default defineSchema({
         userId: v.string(), // Clerk user ID
         date: v.number(), // Unix timestamp
         types: v.array(v.string()), // Array of WorkoutType
-        durationMinutes: v.optional(v.number()),
+        durationSeconds: v.optional(v.number()), // Duration in seconds
         caloriesBurned: v.optional(v.number()),
         steps: v.optional(v.number()),
         distanceKm: v.optional(v.number()),

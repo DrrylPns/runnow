@@ -107,8 +107,21 @@ export function getTotalCalories(workouts: Doc<"workouts">[]): number {
     return workouts.reduce((total, workout) => total + (workout.caloriesBurned || 0), 0);
 }
 
+export function formatDuration(seconds: number): string {
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const remainingSeconds = seconds % 60;
+
+    const parts = [];
+    if (hours > 0) parts.push(`${hours}h`);
+    if (minutes > 0) parts.push(`${minutes}m`);
+    if (remainingSeconds > 0 || parts.length === 0) parts.push(`${remainingSeconds}s`);
+
+    return parts.join(" ");
+}
+
 export function getTotalDuration(workouts: Doc<"workouts">[]): number {
-    return workouts.reduce((total, workout) => total + (workout.durationMinutes || 0), 0);
+    return workouts.reduce((total, workout) => total + (workout.durationSeconds || 0), 0);
 }
 
 export function getTotalSteps(workouts: Doc<"workouts">[]): number {

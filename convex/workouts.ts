@@ -6,10 +6,10 @@ export const create = mutation({
     args: {
         date: v.number(),
         types: v.array(v.string()),
-        durationMinutes: v.optional(v.number()),
+        durationSeconds: v.optional(v.number()),
         caloriesBurned: v.optional(v.number()),
-        distanceKm: v.optional(v.number()),
         steps: v.optional(v.number()),
+        distanceKm: v.optional(v.number()),
         notes: v.optional(v.string()),
     },
     handler: async (ctx, args) => {
@@ -20,9 +20,15 @@ export const create = mutation({
 
         const userId = identity.subject
 
-        return await ctx.db.insert("workouts", {
+        await ctx.db.insert("workouts", {
             userId,
-            ...args,
+            date: args.date,
+            types: args.types,
+            durationSeconds: args.durationSeconds,
+            caloriesBurned: args.caloriesBurned,
+            steps: args.steps,
+            distanceKm: args.distanceKm,
+            notes: args.notes,
         })
     }
 })

@@ -38,7 +38,9 @@ import { toast } from "sonner";
 const workoutFormSchema = z.object({
   date: z.date(),
   types: z.array(z.string()).min(1, "Select at least one workout type"),
-  durationMinutes: z.number().optional(),
+  durationHours: z.number().min(0),
+  durationMinutes: z.number().min(0).max(59),
+  durationSeconds: z.number().min(0).max(59),
   caloriesBurned: z.number().optional(),
   steps: z.number().optional(),
   distanceKm: z.number().optional(),
@@ -70,18 +72,20 @@ export const WorkoutFormDialog = ({
   setIsOpen,
   uniqueWorkoutTypes,
 }: WorkoutFormDialogProps) => {
-  const createWorkout = useMutation(api.workouts.create)
-  const createCustomType = useMutation(api.customWorkoutTypes.create)
-  const customTypes = useQuery(api.customWorkoutTypes.getByUser)
-  const [isAddCustomOpen, setIsAddCustomOpen] = useState(false)
+  const createWorkout = useMutation(api.workouts.create);
+  const createCustomType = useMutation(api.customWorkoutTypes.create);
+  const customTypes = useQuery(api.customWorkoutTypes.getByUser);
+  const [isAddCustomOpen, setIsAddCustomOpen] = useState(false);
 
   const workoutForm = useForm<WorkoutFormValues>({
     resolver: zodResolver(workoutFormSchema),
     defaultValues: {
       date: initialDate,
       types: [],
-      durationMinutes: 30,
-      caloriesBurned: 300,
+      durationHours: 0,
+      durationMinutes: 0,
+      durationSeconds: 0,
+      caloriesBurned: undefined,
       steps: undefined,
       distanceKm: undefined,
       notes: "",
@@ -97,30 +101,40 @@ export const WorkoutFormDialog = ({
   });
 
   const onSubmit = async (data: WorkoutFormValues) => {
-    const unixDate = Math.floor(data.date.getTime() / 1000)
+    const unixDate = Math.floor(data.date.getTime() / 1000);
+    const totalSeconds =
+      data.durationHours * 3600 +
+      data.durationMinutes * 60 +
+      data.durationSeconds;
 
     await createWorkout({
-      ...data,
-      date: unixDate
-    })
+      date: unixDate,
+      types: data.types,
+      durationSeconds: totalSeconds,
+      caloriesBurned: data.caloriesBurned,
+      steps: data.steps,
+      distanceKm: data.distanceKm,
+      notes: data.notes,
+    });
 
-    setIsOpen(false)
-    toast.success("Workout created!")
+    workoutForm.reset();
+    setIsOpen(false);
+    toast.success("Workout created!");
   };
 
   const handleAddCustomType = async (data: CustomWorkoutTypeValues) => {
     try {
       await createCustomType({
         name: data.name.trim(),
-        icon: data.icon || "Ellipsis"
-      })
-      toast.success("Custom workout type added!")
-      setIsAddCustomOpen(false)
-      customTypeForm.reset()
+        icon: data.icon || "Ellipsis",
+      });
+      toast.success("Custom workout type added!");
+      setIsAddCustomOpen(false);
+      customTypeForm.reset();
     } catch (error) {
-      toast.error("Failed to add custom workout type")
+      toast.error("Failed to add custom workout type");
     }
-  }
+  };
 
   return (
     <>
@@ -133,7 +147,11 @@ export const WorkoutFormDialog = ({
             </DialogDescription>
           </DialogHeader>
           <Form {...workoutForm}>
-            <form onSubmit={workoutForm.handleSubmit(onSubmit)} className="space-y-6 animate-in fade-in-50 slide-in-from-bottom-5 duration-500">
+            <form
+              id="workouts"
+              onSubmit={workoutForm.handleSubmit(onSubmit)}
+              className="space-y-6 animate-in fade-in-50 slide-in-from-bottom-5 duration-500"
+            >
               <FormField
                 control={workoutForm.control}
                 name="date"
@@ -148,7 +166,11 @@ export const WorkoutFormDialog = ({
                             className="w-full justify-start text-left font-normal"
                           >
                             <CalendarIcon className="mr-2 h-4 w-4" />
-                            {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
+                            {field.value ? (
+                              format(field.value, "PPP")
+                            ) : (
+                              <span>Pick a date</span>
+                            )}
                           </Button>
                         </FormControl>
                       </PopoverTrigger>
@@ -188,7 +210,10 @@ export const WorkoutFormDialog = ({
                                 currentTypes.filter((t) => t !== type)
                               );
                             } else {
-                              field.onChange([...currentTypes, type as WorkoutType]);
+                              field.onChange([
+                                ...currentTypes,
+                                type as WorkoutType,
+                              ]);
                             }
                           }}
                           className="cursor-pointer transition-opacity hover:opacity-80"
@@ -221,6 +246,7 @@ export const WorkoutFormDialog = ({
                         >
                           <WorkoutTypeBadge
                             type={type.name as WorkoutType}
+                            isCustom
                             className={cn(
                               field.value?.includes(type.name)
                                 ? "ring-1 ring-offset-1 ring-primary"
@@ -246,18 +272,21 @@ export const WorkoutFormDialog = ({
                 )}
               />
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-3 gap-4">
                 <FormField
                   control={workoutForm.control}
-                  name="durationMinutes"
+                  name="durationHours"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Duration (minutes, optional)</FormLabel>
+                      <FormLabel>Hours</FormLabel>
                       <FormControl>
                         <Input
                           type="number"
+                          min="0"
                           {...field}
-                          onChange={(e) => field.onChange(Number(e.target.value))}
+                          onChange={(e) =>
+                            field.onChange(Number(e.target.value))
+                          }
                         />
                       </FormControl>
                       <FormMessage />
@@ -267,15 +296,63 @@ export const WorkoutFormDialog = ({
 
                 <FormField
                   control={workoutForm.control}
+                  name="durationMinutes"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Minutes</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          min="0"
+                          max="59"
+                          {...field}
+                          onChange={(e) =>
+                            field.onChange(Number(e.target.value))
+                          }
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={workoutForm.control}
+                  name="durationSeconds"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Seconds</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          min="0"
+                          max="59"
+                          {...field}
+                          onChange={(e) =>
+                            field.onChange(Number(e.target.value))
+                          }
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <div className="grid grid-cols-1 gap-4">
+                <FormField
+                  control={workoutForm.control}
                   name="caloriesBurned"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Calories Burned (optional)</FormLabel>
+                      <FormLabel>Active Calories Burned (optional)</FormLabel>
                       <FormControl>
                         <Input
                           type="number"
                           {...field}
-                          onChange={(e) => field.onChange(Number(e.target.value))}
+                          onChange={(e) =>
+                            field.onChange(Number(e.target.value))
+                          }
                         />
                       </FormControl>
                       <FormMessage />
@@ -295,7 +372,9 @@ export const WorkoutFormDialog = ({
                         <Input
                           type="number"
                           {...field}
-                          onChange={(e) => field.onChange(Number(e.target.value))}
+                          onChange={(e) =>
+                            field.onChange(Number(e.target.value))
+                          }
                         />
                       </FormControl>
                       <FormMessage />
@@ -314,7 +393,9 @@ export const WorkoutFormDialog = ({
                           type="number"
                           step="0.01"
                           {...field}
-                          onChange={(e) => field.onChange(Number(e.target.value))}
+                          onChange={(e) =>
+                            field.onChange(Number(e.target.value))
+                          }
                         />
                       </FormControl>
                       <FormMessage />
@@ -342,7 +423,9 @@ export const WorkoutFormDialog = ({
               />
 
               <DialogFooter>
-                <Button type="submit">Save Workout</Button>
+                <Button type="submit" form="workouts">
+                  Save Workout
+                </Button>
               </DialogFooter>
             </form>
           </Form>
@@ -358,7 +441,10 @@ export const WorkoutFormDialog = ({
             </DialogDescription>
           </DialogHeader>
           <Form {...customTypeForm}>
-            <form onSubmit={customTypeForm.handleSubmit(handleAddCustomType)} className="space-y-4">
+            <form
+              onSubmit={customTypeForm.handleSubmit(handleAddCustomType)}
+              className="space-y-4"
+            >
               <FormField
                 control={customTypeForm.control}
                 name="name"
@@ -382,7 +468,8 @@ export const WorkoutFormDialog = ({
                       <Input placeholder="e.g. JumpRope" {...field} />
                     </FormControl>
                     <FormDescription>
-                      Enter the name of an icon from Lucide icons. Leave empty to use default icon.
+                      Enter the name of an icon from Lucide icons. Leave empty
+                      to use default icon.
                     </FormDescription>
                     <FormMessage />
                   </FormItem>

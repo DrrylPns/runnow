@@ -1,7 +1,7 @@
 "use client";
 
 import {
-  formatMinutesToHoursAndMinutes,
+  formatDuration,
   getTotalCalories,
   getTotalDuration,
 } from "@/lib/calendar";
@@ -74,7 +74,7 @@ export const CalendarCell = ({ day, onClick, index }: CalendarCellProps) => {
 
               <div className="mt-auto text-xs space-y-0.5">
                 <div className="text-muted-foreground">
-                  {formatMinutesToHoursAndMinutes(totalDuration)}
+                  {formatDuration(totalDuration)}
                 </div>
                 <div className="font-semibold">{totalCalories} kcal</div>
               </div>
