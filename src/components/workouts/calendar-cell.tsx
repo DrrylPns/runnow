@@ -5,11 +5,13 @@ import {
   getTotalCalories,
   getTotalDuration,
 } from "@/lib/calendar";
-import { CalendarDay, WorkoutType } from "@/lib/types";
+import { CalendarDay, WorkoutType, Workout } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
 import { WorkoutFormDialog } from "./workout-form";
 import { WorkoutTypeIcon } from "./workout-type-icon";
+import { Pencil } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface CalendarCellProps {
   day: CalendarDay;
@@ -19,6 +21,7 @@ interface CalendarCellProps {
 
 export const CalendarCell = ({ day, onClick, index }: CalendarCellProps) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [selectedWorkout, setSelectedWorkout] = useState<Workout | undefined>();
   const { date, isCurrentMonth, isToday, workouts } = day;
 
   const hasWorkouts = workouts.length > 0;
@@ -29,6 +32,11 @@ export const CalendarCell = ({ day, onClick, index }: CalendarCellProps) => {
   const uniqueWorkoutTypes = Array.from(
     new Set(workouts.flatMap((workout) => workout.types))
   );
+
+  const handleEdit = (workout: Workout) => {
+    setSelectedWorkout(workout);
+    setIsOpen(true);
+  };
 
   return (
     <>
@@ -44,32 +52,52 @@ export const CalendarCell = ({ day, onClick, index }: CalendarCellProps) => {
         )}
       >
         <div className="flex flex-col h-full">
-          <div className="text-left p-1">
-            <span
-              className={cn(
-                "inline-flex items-center justify-center rounded-full w-7 h-7 text-lg",
-                isToday && "bg-sky-500 text-white font-medium"
-              )}
-            >
-              {date.getDate()}
-            </span>
+          <div className="flex flex-row justify-between">
+            <div className="text-left p-1">
+              <span
+                className={cn(
+                  "inline-flex items-center justify-center rounded-full w-7 h-7 text-lg",
+                  isToday && "bg-sky-500 text-white font-medium"
+                )}
+              >
+                {date.getDate()}
+              </span>
+            </div>
+
+            {workouts.map((workout) => (
+              <div key={workout._id} className="flex items-center gap-1">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6 p-0 hover:bg-muted"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleEdit(workout);
+                  }}
+                >
+                  <Pencil className="h-3 w-3" />
+                </Button>
+              </div>
+            ))}
           </div>
 
           {hasWorkouts ? (
             <div className="flex flex-col p-1 gap-1 h-full">
               <div className="flex flex-wrap gap-0.5 mb-1">
-                {uniqueWorkoutTypes.slice(0, 4).map((type, index) => (
-                  <WorkoutTypeIcon
-                    key={`${date.toISOString()}-${type}-${index}`}
-                    type={type as WorkoutType}
-                    size={20}
-                  />
+                {workouts.map((workout) => (
+                  <div key={workout._id} className="flex items-center gap-1">
+                    {workout.types.slice(0, 2).map((type) => {
+                      return (
+                        <WorkoutTypeIcon type={type as WorkoutType} size={20} />
+                      );
+                    })}
+                    {workout.types.length > 2 && (
+                      <p className="text-xs text-muted-foreground">
+                        +{workout.types.length - 2}
+                      </p>
+                    )}
+                  </div>
                 ))}
-                {uniqueWorkoutTypes.length > 4 && (
-                  <span className="text-xs text-muted-foreground">
-                    +{uniqueWorkoutTypes.length - 4}
-                  </span>
-                )}
               </div>
 
               <div className="mt-auto text-xs space-y-0.5">
@@ -93,7 +121,8 @@ export const CalendarCell = ({ day, onClick, index }: CalendarCellProps) => {
         isOpen={isOpen}
         setIsOpen={setIsOpen}
         isToday={isToday}
-        uniqueWorkoutTypes={uniqueWorkoutTypes as WorkoutType[]}
+        uniqueWorkoutTypes={uniqueWorkoutTypes}
+        workoutToEdit={selectedWorkout}
         key={index}
       />
     </>

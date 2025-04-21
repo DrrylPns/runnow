@@ -1,11 +1,11 @@
 "use client";
 import { defaultWorkoutTypes } from "@/lib/data";
-import { WorkoutType } from "@/lib/types";
+import { Workout, WorkoutType } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { format } from "date-fns";
 import { CalendarIcon, Plus } from "lucide-react";
-import { Dispatch, SetStateAction, useEffect, useState } from "react";
+import { Dispatch, SetStateAction, useEffect, useState, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
 import { Button } from "../ui/button";
@@ -36,7 +36,9 @@ import { api } from "../../../convex/_generated/api";
 import { toast } from "sonner";
 
 const workoutFormSchema = z.object({
-  date: z.date(),
+  date: z
+    .date()
+    .max(new Date(), { message: "Cannot create workouts for future dates" }),
   types: z.array(z.string()).min(1, "Select at least one workout type"),
   durationHours: z.number().min(0),
   durationMinutes: z.number().min(0).max(59),
@@ -62,6 +64,7 @@ interface WorkoutFormDialogProps {
   setIsOpen: Dispatch<SetStateAction<boolean>>;
   initialDate: Date;
   uniqueWorkoutTypes: WorkoutType[];
+  workoutToEdit?: Workout;
 }
 
 export const WorkoutFormDialog = ({
@@ -71,15 +74,30 @@ export const WorkoutFormDialog = ({
   isToday,
   setIsOpen,
   uniqueWorkoutTypes,
+  workoutToEdit,
 }: WorkoutFormDialogProps) => {
   const createWorkout = useMutation(api.workouts.create);
+  const updateWorkout = useMutation(api.workouts.update);
   const createCustomType = useMutation(api.customWorkoutTypes.create);
   const customTypes = useQuery(api.customWorkoutTypes.getByUser);
   const [isAddCustomOpen, setIsAddCustomOpen] = useState(false);
 
-  const workoutForm = useForm<WorkoutFormValues>({
-    resolver: zodResolver(workoutFormSchema),
-    defaultValues: {
+  const defaultValues = useMemo(() => {
+    if (workoutToEdit) {
+      const durationSeconds = workoutToEdit.durationSeconds || 0;
+      return {
+        date: new Date(workoutToEdit.date * 1000),
+        types: workoutToEdit.types,
+        durationHours: Math.floor(durationSeconds / 3600),
+        durationMinutes: Math.floor((durationSeconds % 3600) / 60),
+        durationSeconds: durationSeconds % 60,
+        caloriesBurned: workoutToEdit.caloriesBurned,
+        steps: workoutToEdit.steps,
+        distanceKm: workoutToEdit.distanceKm,
+        notes: workoutToEdit.notes || "",
+      };
+    }
+    return {
       date: initialDate,
       types: [],
       durationHours: 0,
@@ -89,8 +107,18 @@ export const WorkoutFormDialog = ({
       steps: undefined,
       distanceKm: undefined,
       notes: "",
-    },
+    };
+  }, [workoutToEdit, initialDate]);
+
+  const workoutForm = useForm<WorkoutFormValues>({
+    resolver: zodResolver(workoutFormSchema),
+    defaultValues,
   });
+
+  // Reset form when workoutToEdit changes
+  useEffect(() => {
+    workoutForm.reset(defaultValues);
+  }, [workoutToEdit, defaultValues, workoutForm]);
 
   const customTypeForm = useForm<CustomWorkoutTypeValues>({
     resolver: zodResolver(customWorkoutTypeSchema),
@@ -107,19 +135,36 @@ export const WorkoutFormDialog = ({
       data.durationMinutes * 60 +
       data.durationSeconds;
 
-    await createWorkout({
-      date: unixDate,
-      types: data.types,
-      durationSeconds: totalSeconds,
-      caloriesBurned: data.caloriesBurned,
-      steps: data.steps,
-      distanceKm: data.distanceKm,
-      notes: data.notes,
-    });
-
-    workoutForm.reset();
-    setIsOpen(false);
-    toast.success("Workout created!");
+    try {
+      if (workoutToEdit) {
+        await updateWorkout({
+          id: workoutToEdit._id,
+          date: unixDate,
+          types: data.types,
+          durationSeconds: totalSeconds,
+          caloriesBurned: data.caloriesBurned,
+          steps: data.steps,
+          distanceKm: data.distanceKm,
+          notes: data.notes,
+        });
+        toast.success("Workout updated!");
+      } else {
+        await createWorkout({
+          date: unixDate,
+          types: data.types,
+          durationSeconds: totalSeconds,
+          caloriesBurned: data.caloriesBurned,
+          steps: data.steps,
+          distanceKm: data.distanceKm,
+          notes: data.notes,
+        });
+        toast.success("Workout created!");
+      }
+      workoutForm.reset();
+      setIsOpen(false);
+    } catch (error) {
+      toast.error("Failed to save workout");
+    }
   };
 
   const handleAddCustomType = async (data: CustomWorkoutTypeValues) => {
@@ -141,9 +186,13 @@ export const WorkoutFormDialog = ({
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Add / Edit Workout</DialogTitle>
+            <DialogTitle>
+              {workoutToEdit ? "Edit Workout" : "Add Workout"}
+            </DialogTitle>
             <DialogDescription>
-              Fill out the forms to continue tracking your workouts!
+              {workoutToEdit
+                ? "Update your workout details"
+                : "Fill out the form to add a new workout"}
             </DialogDescription>
           </DialogHeader>
           <Form {...workoutForm}>
@@ -180,6 +229,7 @@ export const WorkoutFormDialog = ({
                           selected={field.value}
                           onSelect={field.onChange}
                           initialFocus
+                          disabled={(date) => date > new Date()}
                         />
                       </PopoverContent>
                     </Popover>
@@ -191,85 +241,97 @@ export const WorkoutFormDialog = ({
               <FormField
                 control={workoutForm.control}
                 name="types"
-                render={({ field }) => (
-                  <FormItem>
-                    <div className="mb-4">
-                      <FormLabel>Workout Types</FormLabel>
-                      <FormDescription>
-                        Click on the badges to select workout types
-                      </FormDescription>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      {defaultWorkoutTypes.map((type) => (
-                        <div
-                          key={type}
-                          onClick={() => {
-                            const currentTypes = field.value || [];
-                            if (currentTypes.includes(type as WorkoutType)) {
-                              field.onChange(
-                                currentTypes.filter((t) => t !== type)
-                              );
-                            } else {
-                              field.onChange([
-                                ...currentTypes,
-                                type as WorkoutType,
-                              ]);
-                            }
-                          }}
-                          className="cursor-pointer transition-opacity hover:opacity-80"
-                        >
-                          <WorkoutTypeBadge
-                            type={type as WorkoutType}
-                            className={cn(
-                              field.value?.includes(type as WorkoutType)
-                                ? "ring-1 ring-offset-1 ring-primary"
-                                : "opacity-50"
-                            )}
-                          />
-                        </div>
-                      ))}
+                render={({ field }) => {
+                  return (
+                    <FormItem>
+                      <div className="mb-4">
+                        <FormLabel>Workout Types</FormLabel>
+                        <FormDescription>
+                          Click on the badges to select workout types
+                        </FormDescription>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {defaultWorkoutTypes.map((type) => (
+                          <div
+                            key={type}
+                            onClick={() => {
+                              const currentTypes = field.value || [];
 
-                      {customTypes?.map((type) => (
-                        <div
-                          key={type.name}
-                          onClick={() => {
-                            const currentTypes = field.value || [];
-                            if (currentTypes.includes(type.name)) {
-                              field.onChange(
-                                currentTypes.filter((t) => t !== type.name)
-                              );
-                            } else {
-                              field.onChange([...currentTypes, type.name]);
-                            }
-                          }}
-                          className="cursor-pointer transition-opacity hover:opacity-80"
-                        >
-                          <WorkoutTypeBadge
-                            type={type.name as WorkoutType}
-                            isCustom
-                            className={cn(
-                              field.value?.includes(type.name)
-                                ? "ring-1 ring-offset-1 ring-primary"
-                                : "opacity-50"
-                            )}
-                          />
-                        </div>
-                      ))}
+                              if (currentTypes.includes(type as WorkoutType)) {
+                                const newTypes = currentTypes.filter(
+                                  (t) => t !== type
+                                );
 
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="gap-2"
-                        type="button"
-                        onClick={() => setIsAddCustomOpen(true)}
-                      >
-                        <Plus className="h-4 w-4" />
-                        Add Custom
-                      </Button>
-                    </div>
-                    <FormMessage />
-                  </FormItem>
-                )}
+                                field.onChange(newTypes);
+                              } else {
+                                const newTypes = [
+                                  ...currentTypes,
+                                  type as WorkoutType,
+                                ];
+
+                                field.onChange(newTypes);
+                              }
+                            }}
+                            className="cursor-pointer transition-opacity hover:opacity-80"
+                          >
+                            <WorkoutTypeBadge
+                              type={type as WorkoutType}
+                              className={cn(
+                                field.value?.includes(type as WorkoutType)
+                                  ? "ring-1 ring-offset-1 ring-primary"
+                                  : "opacity-50"
+                              )}
+                            />
+                          </div>
+                        ))}
+
+                        {customTypes?.map((type) => (
+                          <div
+                            key={type.name}
+                            onClick={() => {
+                              const currentTypes = field.value || [];
+
+                              if (currentTypes.includes(type.name)) {
+                                const newTypes = currentTypes.filter(
+                                  (t) => t !== type.name
+                                );
+
+                                field.onChange(newTypes);
+                              } else {
+                                const newTypes = [...currentTypes, type.name];
+
+                                field.onChange(newTypes);
+                              }
+                            }}
+                            className="cursor-pointer transition-opacity hover:opacity-80"
+                          >
+                            <WorkoutTypeBadge
+                              type={type.name as WorkoutType}
+                              isCustom
+                              className={cn(
+                                field.value?.includes(type.name)
+                                  ? "ring-1 ring-offset-1 ring-primary"
+                                  : "opacity-50"
+                              )}
+                            />
+                          </div>
+                        ))}
+
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="gap-2"
+                          type="button"
+                          onClick={() => setIsAddCustomOpen(true)}
+                        >
+                          <Plus className="h-4 w-4" />
+                          Add Custom
+                        </Button>
+                      </div>
+                      <FormMessage />
+                    </FormItem>
+                  );
+                }}
               />
 
               <div className="grid grid-cols-3 gap-4">

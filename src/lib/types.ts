@@ -1,4 +1,4 @@
-import { Doc } from "../../convex/_generated/dataModel";
+import { Doc, Id } from "../../convex/_generated/dataModel";
 
 export type WorkoutType =
   | "Dumbbell"
@@ -12,7 +12,7 @@ export type WorkoutType =
   | string; // Allow custom workout types
 
 export interface Workout {
-  _id: string;
+  _id: Id<"workouts">;
   _creationTime: number;
   userId: string;
   date: number;

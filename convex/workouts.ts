@@ -3,53 +3,93 @@ import { v } from "convex/values";
 import { WorkoutType } from "@/lib/types";
 
 export const create = mutation({
-    args: {
-        date: v.number(),
-        types: v.array(v.string()),
-        durationSeconds: v.optional(v.number()),
-        caloriesBurned: v.optional(v.number()),
-        steps: v.optional(v.number()),
-        distanceKm: v.optional(v.number()),
-        notes: v.optional(v.string()),
-    },
-    handler: async (ctx, args) => {
-        const identity = await ctx.auth.getUserIdentity()
-        if (!identity) {
-            throw new Error("Not authenticated")
-        }
-
-        const userId = identity.subject
-
-        await ctx.db.insert("workouts", {
-            userId,
-            date: args.date,
-            types: args.types,
-            durationSeconds: args.durationSeconds,
-            caloriesBurned: args.caloriesBurned,
-            steps: args.steps,
-            distanceKm: args.distanceKm,
-            notes: args.notes,
-        })
+  args: {
+    date: v.number(),
+    types: v.array(v.string()),
+    durationSeconds: v.optional(v.number()),
+    caloriesBurned: v.optional(v.number()),
+    steps: v.optional(v.number()),
+    distanceKm: v.optional(v.number()),
+    notes: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("Not authenticated");
     }
-})
+
+    const userId = identity.subject;
+
+    await ctx.db.insert("workouts", {
+      userId,
+      date: args.date,
+      types: args.types,
+      durationSeconds: args.durationSeconds,
+      caloriesBurned: args.caloriesBurned,
+      steps: args.steps,
+      distanceKm: args.distanceKm,
+      notes: args.notes,
+    });
+  },
+});
 
 export const get = query({
-    args: {},
-    handler: async (ctx) => {
-        const identity = await ctx.auth.getUserIdentity()
-        if (!identity) {
-            throw new Error("Not authenticated")
-        }
-
-        const userId = identity.subject
-
-        return await ctx.db
-            .query("workouts")
-            .withIndex("by_user", q => q.eq("userId", userId))
-            .order("desc")
-            .collect()
+  args: {},
+  handler: async (ctx) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("Not authenticated");
     }
-})
+
+    const userId = identity.subject;
+
+    return await ctx.db
+      .query("workouts")
+      .withIndex("by_user", (q) => q.eq("userId", userId))
+      .order("desc")
+      .collect();
+  },
+});
+
+export const update = mutation({
+  args: {
+    id: v.id("workouts"),
+    date: v.number(),
+    types: v.array(v.string()),
+    durationSeconds: v.optional(v.number()),
+    caloriesBurned: v.optional(v.number()),
+    steps: v.optional(v.number()),
+    distanceKm: v.optional(v.number()),
+    notes: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("Not authenticated");
+    }
+
+    const userId = identity.subject;
+    const workout = await ctx.db.get(args.id);
+
+    if (!workout) {
+      throw new Error("Workout not found");
+    }
+
+    if (workout.userId !== userId) {
+      throw new Error("Not authorized");
+    }
+
+    await ctx.db.patch(args.id, {
+      date: args.date,
+      types: args.types,
+      durationSeconds: args.durationSeconds,
+      caloriesBurned: args.caloriesBurned,
+      steps: args.steps,
+      distanceKm: args.distanceKm,
+      notes: args.notes,
+    });
+  },
+});
 
 // export const create = mutation({
 //     args: {
@@ -73,39 +113,6 @@ export const get = query({
 //             userId,
 //             ...args,
 //         });
-//     },
-// });
-
-// export const update = mutation({
-//     args: {
-//         id: v.id("workouts"),
-//         date: v.number(),
-//         types: v.array(v.string()),
-//         durationMinutes: v.number(),
-//         caloriesBurned: v.number(),
-//         steps: v.optional(v.number()),
-//         distanceKm: v.optional(v.number()),
-//         notes: v.optional(v.string()),
-//     },
-//     handler: async (ctx, args) => {
-//         const identity = await ctx.auth.getUserIdentity();
-//         if (!identity) {
-//             throw new Error("Not authenticated");
-//         }
-
-//         const userId = identity.subject;
-//         const workout = await ctx.db.get(args.id);
-
-//         if (!workout) {
-//             throw new Error("Workout not found");
-//         }
-
-//         if (workout.userId !== userId) {
-//             throw new Error("Not authorized");
-//         }
-
-//         const { id, ...data } = args;
-//         return await ctx.db.patch(id, data);
 //     },
 // });
 
@@ -200,4 +207,4 @@ export const get = query({
 //             totalDistance,
 //         };
 //     },
-// }); 
+// });
