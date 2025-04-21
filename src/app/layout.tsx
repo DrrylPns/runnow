@@ -16,7 +16,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`antialiased overflow-hidden`}>
+      <body className={`antialiased`}>
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
@@ -24,8 +24,8 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <ConvexClientProvider>
-          {children}
-          <Toaster richColors />
+            {children}
+            <Toaster richColors />
           </ConvexClientProvider>
         </ThemeProvider>
       </body>
